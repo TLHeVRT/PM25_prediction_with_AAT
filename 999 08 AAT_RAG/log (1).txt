@@ -1,0 +1,112 @@
+
+==================== 启动实验: exp_run_d256_id2 (d_profile=256) ====================
+Using device: cuda
+⚠️ 警告: 未找到诊断文件 diagnosis_output/02_sensor_stuck_detection.csv，将使用全量 935 个站点。
+最终 data_shape: (935, 35040, 10) 
+
+数据集中 PM2.5 的绝对最大值是: 32768.0
+大于 1000 μg/m³ 的异常点个数: 635
+Building static profile features from historical data...
+
+[*] 载入轻量级 Encoder...
+[*] Total trainable parameters: 7,381,762
+Epoch [1/100] | Total Loss: 1.3497 | Aux Loss: 0.2707 | Train Loss: 1.0791 (Base: 0.3536, DTW: 0.1872, TopK: 0.6029) | Val Loss:   0.9867 (Base: 0.3430, DTW: 0.1676, TopK: 0.5519) | LR: 2.00e-04
+Epoch [2/100] | Total Loss: 1.2191 | Aux Loss: 0.2178 | Train Loss: 1.0013 (Base: 0.3351, DTW: 0.1699, TopK: 0.5860) | Val Loss:   0.9206 (Base: 0.3170, DTW: 0.1477, TopK: 0.5878) | LR: 2.00e-04
+Epoch [3/100] | Total Loss: 1.1868 | Aux Loss: 0.2063 | Train Loss: 0.9805 (Base: 0.3315, DTW: 0.1632, TopK: 0.5823) | Val Loss:   0.8969 (Base: 0.3130, DTW: 0.1450, TopK: 0.5476) | LR: 2.00e-04
+Epoch [4/100] | Total Loss: 1.1605 | Aux Loss: 0.1993 | Train Loss: 0.9612 (Base: 0.3278, DTW: 0.1578, TopK: 0.5742) | Val Loss:   0.9118 (Base: 0.3157, DTW: 0.1479, TopK: 0.5615) | LR: 1.99e-04
+Epoch [5/100] | Total Loss: 1.1463 | Aux Loss: 0.1960 | Train Loss: 0.9503 (Base: 0.3244, DTW: 0.1556, TopK: 0.5689) | Val Loss:   0.8700 (Base: 0.3021, DTW: 0.1423, TopK: 0.5318) | LR: 1.99e-04
+Epoch [6/100] | Total Loss: 1.1351 | Aux Loss: 0.1940 | Train Loss: 0.9411 (Base: 0.3221, DTW: 0.1531, TopK: 0.5658) | Val Loss:   0.8774 (Base: 0.3119, DTW: 0.1394, TopK: 0.5292) | LR: 1.98e-04
+Epoch [7/100] | Total Loss: 1.1316 | Aux Loss: 0.1937 | Train Loss: 0.9379 (Base: 0.3220, DTW: 0.1521, TopK: 0.5633) | Val Loss:   0.8572 (Base: 0.2964, DTW: 0.1410, TopK: 0.5213) | LR: 1.98e-04
+Epoch [8/100] | Total Loss: 1.1178 | Aux Loss: 0.1913 | Train Loss: 0.9265 (Base: 0.3180, DTW: 0.1497, TopK: 0.5605) | Val Loss:   0.8817 (Base: 0.3152, DTW: 0.1454, TopK: 0.4881) | LR: 1.97e-04
+Epoch [9/100] | Total Loss: 1.1007 | Aux Loss: 0.1880 | Train Loss: 0.9126 (Base: 0.3142, DTW: 0.1465, TopK: 0.5548) | Val Loss:   0.8933 (Base: 0.3274, DTW: 0.1497, TopK: 0.4543) | LR: 1.96e-04
+Epoch [10/100] | Total Loss: 1.0905 | Aux Loss: 0.1868 | Train Loss: 0.9037 (Base: 0.3134, DTW: 0.1445, TopK: 0.5446) | Val Loss:   0.8476 (Base: 0.3017, DTW: 0.1367, TopK: 0.5021) | LR: 1.95e-04
+Epoch [11/100] | Total Loss: 1.0876 | Aux Loss: 0.1855 | Train Loss: 0.9021 (Base: 0.3125, DTW: 0.1438, TopK: 0.5488) | Val Loss:   0.8558 (Base: 0.3037, DTW: 0.1356, TopK: 0.5230) | LR: 1.94e-04
+Epoch [12/100] | Total Loss: 1.0739 | Aux Loss: 0.1841 | Train Loss: 0.8898 (Base: 0.3101, DTW: 0.1408, TopK: 0.5420) | Val Loss:   0.8498 (Base: 0.3074, DTW: 0.1380, TopK: 0.4805) | LR: 1.93e-04
+Epoch [13/100] | Total Loss: 1.0760 | Aux Loss: 0.1835 | Train Loss: 0.8925 (Base: 0.3104, DTW: 0.1411, TopK: 0.5465) | Val Loss:   0.8362 (Base: 0.3041, DTW: 0.1327, TopK: 0.4846) | LR: 1.92e-04
+Epoch [14/100] | Total Loss: 1.0726 | Aux Loss: 0.1842 | Train Loss: 0.8884 (Base: 0.3101, DTW: 0.1402, TopK: 0.5428) | Val Loss:   0.8479 (Base: 0.3060, DTW: 0.1371, TopK: 0.4841) | LR: 1.91e-04
+Epoch [15/100] | Total Loss: 1.0611 | Aux Loss: 0.1811 | Train Loss: 0.8801 (Base: 0.3070, DTW: 0.1382, TopK: 0.5427) | Val Loss:   0.8485 (Base: 0.3033, DTW: 0.1407, TopK: 0.4735) | LR: 1.89e-04
+Epoch [16/100] | Total Loss: 1.0647 | Aux Loss: 0.1822 | Train Loss: 0.8825 (Base: 0.3088, DTW: 0.1388, TopK: 0.5406) | Val Loss:   0.8459 (Base: 0.3035, DTW: 0.1375, TopK: 0.4814) | LR: 1.88e-04
+Epoch [17/100] | Total Loss: 1.0559 | Aux Loss: 0.1805 | Train Loss: 0.8753 (Base: 0.3069, DTW: 0.1373, TopK: 0.5355) | Val Loss:   0.8440 (Base: 0.3057, DTW: 0.1341, TopK: 0.4981) | LR: 1.86e-04
+Epoch [18/100] | Total Loss: 1.0538 | Aux Loss: 0.1794 | Train Loss: 0.8744 (Base: 0.3066, DTW: 0.1369, TopK: 0.5366) | Val Loss:   0.8074 (Base: 0.2944, DTW: 0.1259, TopK: 0.4804) | LR: 1.85e-04
+Epoch [19/100] | Total Loss: 1.0500 | Aux Loss: 0.1800 | Train Loss: 0.8700 (Base: 0.3055, DTW: 0.1360, TopK: 0.5333) | Val Loss:   0.8109 (Base: 0.2871, DTW: 0.1276, TopK: 0.5119) | LR: 1.83e-04
+Epoch [20/100] | Total Loss: 1.0440 | Aux Loss: 0.1778 | Train Loss: 0.8662 (Base: 0.3046, DTW: 0.1342, TopK: 0.5364) | Val Loss:   0.8200 (Base: 0.2977, DTW: 0.1316, TopK: 0.4724) | LR: 1.81e-04
+Epoch [21/100] | Total Loss: 1.0438 | Aux Loss: 0.1779 | Train Loss: 0.8659 (Base: 0.3046, DTW: 0.1350, TopK: 0.5317) | Val Loss:   0.8363 (Base: 0.3059, DTW: 0.1341, TopK: 0.4680) | LR: 1.79e-04
+Epoch [22/100] | Total Loss: 1.0401 | Aux Loss: 0.1766 | Train Loss: 0.8635 (Base: 0.3035, DTW: 0.1343, TopK: 0.5321) | Val Loss:   0.8252 (Base: 0.2996, DTW: 0.1281, TopK: 0.4999) | LR: 1.77e-04
+Epoch [23/100] | Total Loss: 1.0320 | Aux Loss: 0.1753 | Train Loss: 0.8567 (Base: 0.3012, DTW: 0.1327, TopK: 0.5312) | Val Loss:   0.8036 (Base: 0.2948, DTW: 0.1265, TopK: 0.4647) | LR: 1.75e-04
+Epoch [24/100] | Total Loss: 1.0286 | Aux Loss: 0.1745 | Train Loss: 0.8541 (Base: 0.3012, DTW: 0.1321, TopK: 0.5279) | Val Loss:   0.8086 (Base: 0.2980, DTW: 0.1272, TopK: 0.4617) | LR: 1.73e-04
+Epoch [25/100] | Total Loss: 1.0288 | Aux Loss: 0.1762 | Train Loss: 0.8526 (Base: 0.3012, DTW: 0.1310, TopK: 0.5296) | Val Loss:   0.8055 (Base: 0.2904, DTW: 0.1244, TopK: 0.5029) | LR: 1.71e-04
+Epoch [26/100] | Total Loss: 1.0255 | Aux Loss: 0.1751 | Train Loss: 0.8504 (Base: 0.3016, DTW: 0.1304, TopK: 0.5266) | Val Loss:   0.8034 (Base: 0.2935, DTW: 0.1260, TopK: 0.4724) | LR: 1.69e-04
+Epoch [27/100] | Total Loss: 1.0269 | Aux Loss: 0.1745 | Train Loss: 0.8525 (Base: 0.3017, DTW: 0.1314, TopK: 0.5266) | Val Loss:   0.7933 (Base: 0.2922, DTW: 0.1235, TopK: 0.4622) | LR: 1.66e-04
+Epoch [28/100] | Total Loss: 1.0192 | Aux Loss: 0.1721 | Train Loss: 0.8471 (Base: 0.3000, DTW: 0.1299, TopK: 0.5269) | Val Loss:   0.8049 (Base: 0.2947, DTW: 0.1280, TopK: 0.4618) | LR: 1.64e-04
+Epoch [29/100] | Total Loss: 1.0115 | Aux Loss: 0.1709 | Train Loss: 0.8405 (Base: 0.2980, DTW: 0.1285, TopK: 0.5237) | Val Loss:   0.7955 (Base: 0.2904, DTW: 0.1248, TopK: 0.4692) | LR: 1.61e-04
+Epoch [30/100] | Total Loss: 1.0088 | Aux Loss: 0.1707 | Train Loss: 0.8381 (Base: 0.2973, DTW: 0.1282, TopK: 0.5210) | Val Loss:   0.8090 (Base: 0.2962, DTW: 0.1270, TopK: 0.4740) | LR: 1.59e-04
+Epoch [31/100] | Total Loss: 1.0055 | Aux Loss: 0.1695 | Train Loss: 0.8360 (Base: 0.2978, DTW: 0.1273, TopK: 0.5198) | Val Loss:   0.8042 (Base: 0.2961, DTW: 0.1286, TopK: 0.4485) | LR: 1.56e-04
+Epoch [32/100] | Total Loss: 1.0070 | Aux Loss: 0.1719 | Train Loss: 0.8352 (Base: 0.2979, DTW: 0.1269, TopK: 0.5194) | Val Loss:   0.7994 (Base: 0.2919, DTW: 0.1259, TopK: 0.4659) | LR: 1.54e-04
+Epoch [33/100] | Total Loss: 1.0053 | Aux Loss: 0.1707 | Train Loss: 0.8346 (Base: 0.2970, DTW: 0.1270, TopK: 0.5203) | Val Loss:   0.8087 (Base: 0.2949, DTW: 0.1252, TopK: 0.4869) | LR: 1.51e-04
+Epoch [34/100] | Total Loss: 1.0045 | Aux Loss: 0.1703 | Train Loss: 0.8342 (Base: 0.2974, DTW: 0.1263, TopK: 0.5214) | Val Loss:   0.7975 (Base: 0.2941, DTW: 0.1250, TopK: 0.4595) | LR: 1.48e-04
+Epoch [35/100] | Total Loss: 0.9971 | Aux Loss: 0.1682 | Train Loss: 0.8289 (Base: 0.2953, DTW: 0.1257, TopK: 0.5169) | Val Loss:   0.7792 (Base: 0.2834, DTW: 0.1204, TopK: 0.4761) | LR: 1.46e-04
+Epoch [36/100] | Total Loss: 0.9892 | Aux Loss: 0.1671 | Train Loss: 0.8221 (Base: 0.2935, DTW: 0.1240, TopK: 0.5153) | Val Loss:   0.7896 (Base: 0.2873, DTW: 0.1230, TopK: 0.4766) | LR: 1.43e-04
+Epoch [37/100] | Total Loss: 0.9911 | Aux Loss: 0.1676 | Train Loss: 0.8234 (Base: 0.2937, DTW: 0.1245, TopK: 0.5150) | Val Loss:   0.7923 (Base: 0.2960, DTW: 0.1235, TopK: 0.4464) | LR: 1.40e-04
+Epoch [38/100] | Total Loss: 0.9945 | Aux Loss: 0.1676 | Train Loss: 0.8269 (Base: 0.2957, DTW: 0.1248, TopK: 0.5167) | Val Loss:   0.8019 (Base: 0.2929, DTW: 0.1260, TopK: 0.4721) | LR: 1.37e-04
+Epoch [39/100] | Total Loss: 0.9858 | Aux Loss: 0.1674 | Train Loss: 0.8184 (Base: 0.2925, DTW: 0.1230, TopK: 0.5147) | Val Loss:   0.7920 (Base: 0.2906, DTW: 0.1230, TopK: 0.4680) | LR: 1.34e-04
+Epoch [40/100] | Total Loss: 0.9875 | Aux Loss: 0.1670 | Train Loss: 0.8204 (Base: 0.2929, DTW: 0.1235, TopK: 0.5147) | Val Loss:   0.7926 (Base: 0.2911, DTW: 0.1235, TopK: 0.4671) | LR: 1.31e-04
+Epoch [41/100] | Total Loss: 0.9795 | Aux Loss: 0.1654 | Train Loss: 0.8140 (Base: 0.2921, DTW: 0.1219, TopK: 0.5116) | Val Loss:   0.8057 (Base: 0.2973, DTW: 0.1275, TopK: 0.4558) | LR: 1.28e-04
+Epoch [42/100] | Total Loss: 0.9838 | Aux Loss: 0.1670 | Train Loss: 0.8168 (Base: 0.2927, DTW: 0.1224, TopK: 0.5138) | Val Loss:   0.7909 (Base: 0.2930, DTW: 0.1238, TopK: 0.4536) | LR: 1.25e-04
+Epoch [43/100] | Total Loss: 0.9787 | Aux Loss: 0.1659 | Train Loss: 0.8128 (Base: 0.2912, DTW: 0.1217, TopK: 0.5113) | Val Loss:   0.8013 (Base: 0.2953, DTW: 0.1269, TopK: 0.4561) | LR: 1.22e-04
+Epoch [44/100] | Total Loss: 0.9772 | Aux Loss: 0.1657 | Train Loss: 0.8115 (Base: 0.2905, DTW: 0.1217, TopK: 0.5101) | Val Loss:   0.7942 (Base: 0.2897, DTW: 0.1247, TopK: 0.4682) | LR: 1.19e-04
+Epoch [45/100] | Total Loss: 0.9790 | Aux Loss: 0.1657 | Train Loss: 0.8133 (Base: 0.2922, DTW: 0.1213, TopK: 0.5114) | Val Loss:   0.7757 (Base: 0.2874, DTW: 0.1194, TopK: 0.4569) | LR: 1.16e-04
+Epoch [46/100] | Total Loss: 0.9742 | Aux Loss: 0.1645 | Train Loss: 0.8097 (Base: 0.2911, DTW: 0.1207, TopK: 0.5089) | Val Loss:   0.7965 (Base: 0.2926, DTW: 0.1257, TopK: 0.4574) | LR: 1.13e-04
+Epoch [47/100] | Total Loss: 0.9767 | Aux Loss: 0.1662 | Train Loss: 0.8105 (Base: 0.2905, DTW: 0.1208, TopK: 0.5119) | Val Loss:   0.7801 (Base: 0.2859, DTW: 0.1198, TopK: 0.4756) | LR: 1.10e-04
+Epoch [48/100] | Total Loss: 0.9694 | Aux Loss: 0.1652 | Train Loss: 0.8042 (Base: 0.2894, DTW: 0.1195, TopK: 0.5072) | Val Loss:   0.7798 (Base: 0.2859, DTW: 0.1192, TopK: 0.4758) | LR: 1.07e-04
+Epoch [49/100] | Total Loss: 0.9660 | Aux Loss: 0.1644 | Train Loss: 0.8016 (Base: 0.2885, DTW: 0.1188, TopK: 0.5069) | Val Loss:   0.8079 (Base: 0.3009, DTW: 0.1281, TopK: 0.4469) | LR: 1.04e-04
+Epoch [50/100] | Total Loss: 0.9655 | Aux Loss: 0.1640 | Train Loss: 0.8014 (Base: 0.2879, DTW: 0.1192, TopK: 0.5057) | Val Loss:   0.7749 (Base: 0.2860, DTW: 0.1203, TopK: 0.4544) | LR: 1.01e-04
+Epoch [51/100] | Total Loss: 0.9580 | Aux Loss: 0.1639 | Train Loss: 0.7941 (Base: 0.2873, DTW: 0.1166, TopK: 0.5027) | Val Loss:   0.7749 (Base: 0.2832, DTW: 0.1205, TopK: 0.4620) | LR: 9.74e-05
+Epoch [52/100] | Total Loss: 0.9596 | Aux Loss: 0.1626 | Train Loss: 0.7970 (Base: 0.2866, DTW: 0.1182, TopK: 0.5039) | Val Loss:   0.7740 (Base: 0.2841, DTW: 0.1195, TopK: 0.4624) | LR: 9.43e-05
+Epoch [53/100] | Total Loss: 0.9474 | Aux Loss: 0.1607 | Train Loss: 0.7867 (Base: 0.2848, DTW: 0.1156, TopK: 0.4976) | Val Loss:   0.7754 (Base: 0.2859, DTW: 0.1205, TopK: 0.4547) | LR: 9.11e-05
+Epoch [54/100] | Total Loss: 0.9512 | Aux Loss: 0.1610 | Train Loss: 0.7902 (Base: 0.2856, DTW: 0.1163, TopK: 0.5004) | Val Loss:   0.7710 (Base: 0.2843, DTW: 0.1192, TopK: 0.4564) | LR: 8.80e-05
+Epoch [55/100] | Total Loss: 0.9528 | Aux Loss: 0.1615 | Train Loss: 0.7913 (Base: 0.2855, DTW: 0.1165, TopK: 0.5019) | Val Loss:   0.7980 (Base: 0.2974, DTW: 0.1242, TopK: 0.4564) | LR: 8.49e-05
+Epoch [56/100] | Total Loss: 0.9513 | Aux Loss: 0.1623 | Train Loss: 0.7890 (Base: 0.2853, DTW: 0.1158, TopK: 0.5010) | Val Loss:   0.7561 (Base: 0.2803, DTW: 0.1158, TopK: 0.4495) | LR: 8.19e-05
+Epoch [57/100] | Total Loss: 0.9501 | Aux Loss: 0.1624 | Train Loss: 0.7877 (Base: 0.2844, DTW: 0.1157, TopK: 0.5016) | Val Loss:   0.8054 (Base: 0.2990, DTW: 0.1297, TopK: 0.4362) | LR: 7.88e-05
+Epoch [58/100] | Total Loss: 0.9447 | Aux Loss: 0.1617 | Train Loss: 0.7830 (Base: 0.2820, DTW: 0.1151, TopK: 0.4991) | Val Loss:   0.7818 (Base: 0.2871, DTW: 0.1207, TopK: 0.4679) | LR: 7.58e-05
+Epoch [59/100] | Total Loss: 0.9390 | Aux Loss: 0.1597 | Train Loss: 0.7793 (Base: 0.2822, DTW: 0.1141, TopK: 0.4940) | Val Loss:   0.7775 (Base: 0.2866, DTW: 0.1193, TopK: 0.4664) | LR: 7.27e-05
+Epoch [60/100] | Total Loss: 0.9427 | Aux Loss: 0.1606 | Train Loss: 0.7821 (Base: 0.2825, DTW: 0.1147, TopK: 0.4972) | Val Loss:   0.7874 (Base: 0.2911, DTW: 0.1229, TopK: 0.4559) | LR: 6.98e-05
+Epoch [61/100] | Total Loss: 0.9435 | Aux Loss: 0.1609 | Train Loss: 0.7826 (Base: 0.2830, DTW: 0.1149, TopK: 0.4957) | Val Loss:   0.7807 (Base: 0.2857, DTW: 0.1218, TopK: 0.4645) | LR: 6.68e-05
+Epoch [62/100] | Total Loss: 0.9385 | Aux Loss: 0.1591 | Train Loss: 0.7794 (Base: 0.2821, DTW: 0.1139, TopK: 0.4958) | Val Loss:   0.7684 (Base: 0.2850, DTW: 0.1175, TopK: 0.4566) | LR: 6.39e-05
+Epoch [63/100] | Total Loss: 0.9385 | Aux Loss: 0.1601 | Train Loss: 0.7784 (Base: 0.2825, DTW: 0.1134, TopK: 0.4946) | Val Loss:   0.7766 (Base: 0.2853, DTW: 0.1212, TopK: 0.4549) | LR: 6.10e-05
+Epoch [64/100] | Total Loss: 0.9362 | Aux Loss: 0.1608 | Train Loss: 0.7754 (Base: 0.2820, DTW: 0.1124, TopK: 0.4930) | Val Loss:   0.7765 (Base: 0.2870, DTW: 0.1207, TopK: 0.4518) | LR: 5.81e-05
+Epoch [65/100] | Total Loss: 0.9378 | Aux Loss: 0.1595 | Train Loss: 0.7783 (Base: 0.2817, DTW: 0.1134, TopK: 0.4971) | Val Loss:   0.7913 (Base: 0.2933, DTW: 0.1228, TopK: 0.4617) | LR: 5.53e-05
+Epoch [66/100] | Total Loss: 0.9314 | Aux Loss: 0.1590 | Train Loss: 0.7724 (Base: 0.2802, DTW: 0.1121, TopK: 0.4927) | Val Loss:   0.7853 (Base: 0.2911, DTW: 0.1244, TopK: 0.4382) | LR: 5.26e-05
+Epoch [67/100] | Total Loss: 0.9300 | Aux Loss: 0.1581 | Train Loss: 0.7719 (Base: 0.2797, DTW: 0.1123, TopK: 0.4920) | Val Loss:   0.7818 (Base: 0.2899, DTW: 0.1225, TopK: 0.4487) | LR: 4.99e-05
+Epoch [68/100] | Total Loss: 0.9302 | Aux Loss: 0.1602 | Train Loss: 0.7700 (Base: 0.2794, DTW: 0.1116, TopK: 0.4929) | Val Loss:   0.7665 (Base: 0.2859, DTW: 0.1191, TopK: 0.4393) | LR: 4.72e-05
+Epoch [69/100] | Total Loss: 0.9180 | Aux Loss: 0.1580 | Train Loss: 0.7600 (Base: 0.2773, DTW: 0.1094, TopK: 0.4863) | Val Loss:   0.7804 (Base: 0.2897, DTW: 0.1213, TopK: 0.4521) | LR: 4.46e-05
+Epoch [70/100] | Total Loss: 0.9270 | Aux Loss: 0.1581 | Train Loss: 0.7688 (Base: 0.2788, DTW: 0.1110, TopK: 0.4940) | Val Loss:   0.7747 (Base: 0.2890, DTW: 0.1220, TopK: 0.4332) | LR: 4.20e-05
+Epoch [71/100] | Total Loss: 0.9239 | Aux Loss: 0.1588 | Train Loss: 0.7651 (Base: 0.2781, DTW: 0.1102, TopK: 0.4910) | Val Loss:   0.7732 (Base: 0.2882, DTW: 0.1213, TopK: 0.4360) | LR: 3.95e-05
+Epoch [72/100] | Total Loss: 0.9229 | Aux Loss: 0.1577 | Train Loss: 0.7652 (Base: 0.2776, DTW: 0.1104, TopK: 0.4924) | Val Loss:   0.7871 (Base: 0.2898, DTW: 0.1234, TopK: 0.4582) | LR: 3.71e-05
+Epoch [73/100] | Total Loss: 0.9179 | Aux Loss: 0.1587 | Train Loss: 0.7592 (Base: 0.2768, DTW: 0.1091, TopK: 0.4852) | Val Loss:   0.7696 (Base: 0.2851, DTW: 0.1183, TopK: 0.4564) | LR: 3.47e-05
+Epoch [74/100] | Total Loss: 0.9151 | Aux Loss: 0.1564 | Train Loss: 0.7587 (Base: 0.2765, DTW: 0.1091, TopK: 0.4851) | Val Loss:   0.7688 (Base: 0.2857, DTW: 0.1199, TopK: 0.4418) | LR: 3.24e-05
+Epoch [75/100] | Total Loss: 0.9133 | Aux Loss: 0.1562 | Train Loss: 0.7571 (Base: 0.2761, DTW: 0.1086, TopK: 0.4849) | Val Loss:   0.7768 (Base: 0.2888, DTW: 0.1206, TopK: 0.4511) | LR: 3.01e-05
+Epoch [76/100] | Total Loss: 0.9131 | Aux Loss: 0.1555 | Train Loss: 0.7576 (Base: 0.2764, DTW: 0.1084, TopK: 0.4866) | Val Loss:   0.7771 (Base: 0.2889, DTW: 0.1210, TopK: 0.4482) | LR: 2.80e-05
+Epoch [77/100] | Total Loss: 0.9138 | Aux Loss: 0.1572 | Train Loss: 0.7566 (Base: 0.2759, DTW: 0.1084, TopK: 0.4857) | Val Loss:   0.7718 (Base: 0.2859, DTW: 0.1195, TopK: 0.4506) | LR: 2.59e-05
+Epoch [78/100] | Total Loss: 0.9114 | Aux Loss: 0.1575 | Train Loss: 0.7539 (Base: 0.2752, DTW: 0.1078, TopK: 0.4840) | Val Loss:   0.7826 (Base: 0.2868, DTW: 0.1227, TopK: 0.4616) | LR: 2.38e-05
+Epoch [79/100] | Total Loss: 0.9087 | Aux Loss: 0.1573 | Train Loss: 0.7513 (Base: 0.2750, DTW: 0.1074, TopK: 0.4798) | Val Loss:   0.7683 (Base: 0.2818, DTW: 0.1188, TopK: 0.4627) | LR: 2.19e-05
+Epoch [80/100] | Total Loss: 0.9195 | Aux Loss: 0.1576 | Train Loss: 0.7619 (Base: 0.2774, DTW: 0.1092, TopK: 0.4900) | Val Loss:   0.7661 (Base: 0.2848, DTW: 0.1199, TopK: 0.4351) | LR: 2.00e-05
+Epoch [81/100] | Total Loss: 0.9150 | Aux Loss: 0.1584 | Train Loss: 0.7566 (Base: 0.2768, DTW: 0.1084, TopK: 0.4815) | Val Loss:   0.7700 (Base: 0.2875, DTW: 0.1201, TopK: 0.4381) | LR: 1.82e-05
+Epoch [82/100] | Total Loss: 0.9038 | Aux Loss: 0.1559 | Train Loss: 0.7479 (Base: 0.2743, DTW: 0.1064, TopK: 0.4791) | Val Loss:   0.7819 (Base: 0.2915, DTW: 0.1222, TopK: 0.4433) | LR: 1.65e-05
+Epoch [83/100] | Total Loss: 0.9039 | Aux Loss: 0.1567 | Train Loss: 0.7472 (Base: 0.2726, DTW: 0.1066, TopK: 0.4809) | Val Loss:   0.7626 (Base: 0.2839, DTW: 0.1170, TopK: 0.4485) | LR: 1.49e-05
+Epoch [84/100] | Total Loss: 0.9051 | Aux Loss: 0.1561 | Train Loss: 0.7490 (Base: 0.2738, DTW: 0.1063, TopK: 0.4834) | Val Loss:   0.7704 (Base: 0.2859, DTW: 0.1201, TopK: 0.4423) | LR: 1.33e-05
+Epoch [85/100] | Total Loss: 0.9060 | Aux Loss: 0.1579 | Train Loss: 0.7481 (Base: 0.2741, DTW: 0.1062, TopK: 0.4807) | Val Loss:   0.7833 (Base: 0.2917, DTW: 0.1218, TopK: 0.4509) | LR: 1.18e-05
+Epoch [86/100] | Total Loss: 0.9049 | Aux Loss: 0.1566 | Train Loss: 0.7482 (Base: 0.2739, DTW: 0.1062, TopK: 0.4819) | Val Loss:   0.7708 (Base: 0.2877, DTW: 0.1200, TopK: 0.4399) | LR: 1.05e-05
+Epoch [87/100] | Total Loss: 0.9059 | Aux Loss: 0.1555 | Train Loss: 0.7504 (Base: 0.2746, DTW: 0.1069, TopK: 0.4812) | Val Loss:   0.7758 (Base: 0.2855, DTW: 0.1213, TopK: 0.4532) | LR: 9.18e-06
+Epoch [88/100] | Total Loss: 0.9106 | Aux Loss: 0.1573 | Train Loss: 0.7533 (Base: 0.2749, DTW: 0.1073, TopK: 0.4846) | Val Loss:   0.7843 (Base: 0.2908, DTW: 0.1238, TopK: 0.4438) | LR: 7.99e-06
+Epoch [89/100] | Total Loss: 0.9088 | Aux Loss: 0.1564 | Train Loss: 0.7524 (Base: 0.2750, DTW: 0.1070, TopK: 0.4840) | Val Loss:   0.7805 (Base: 0.2920, DTW: 0.1218, TopK: 0.4409) | LR: 6.88e-06
+Epoch [90/100] | Total Loss: 0.9023 | Aux Loss: 0.1552 | Train Loss: 0.7471 (Base: 0.2731, DTW: 0.1062, TopK: 0.4810) | Val Loss:   0.7717 (Base: 0.2868, DTW: 0.1207, TopK: 0.4414) | LR: 5.87e-06
+Epoch [91/100] | Total Loss: 0.9059 | Aux Loss: 0.1565 | Train Loss: 0.7494 (Base: 0.2736, DTW: 0.1066, TopK: 0.4847) | Val Loss:   0.7679 (Base: 0.2852, DTW: 0.1196, TopK: 0.4415) | LR: 4.95e-06
+Epoch [92/100] | Total Loss: 0.9037 | Aux Loss: 0.1558 | Train Loss: 0.7479 (Base: 0.2737, DTW: 0.1062, TopK: 0.4808) | Val Loss:   0.7650 (Base: 0.2840, DTW: 0.1186, TopK: 0.4445) | LR: 4.13e-06
+Epoch [93/100] | Total Loss: 0.8993 | Aux Loss: 0.1549 | Train Loss: 0.7443 (Base: 0.2729, DTW: 0.1054, TopK: 0.4791) | Val Loss:   0.7700 (Base: 0.2852, DTW: 0.1194, TopK: 0.4500) | LR: 3.40e-06
+Epoch [94/100] | Total Loss: 0.8987 | Aux Loss: 0.1548 | Train Loss: 0.7439 (Base: 0.2726, DTW: 0.1051, TopK: 0.4817) | Val Loss:   0.7666 (Base: 0.2856, DTW: 0.1197, TopK: 0.4363) | LR: 2.76e-06
+Epoch [95/100] | Total Loss: 0.8972 | Aux Loss: 0.1548 | Train Loss: 0.7424 (Base: 0.2723, DTW: 0.1048, TopK: 0.4781) | Val Loss:   0.7695 (Base: 0.2862, DTW: 0.1195, TopK: 0.4448) | LR: 2.23e-06
+Epoch [96/100] | Total Loss: 0.8965 | Aux Loss: 0.1558 | Train Loss: 0.7407 (Base: 0.2716, DTW: 0.1049, TopK: 0.4755) | Val Loss:   0.7597 (Base: 0.2832, DTW: 0.1174, TopK: 0.4394) | LR: 1.78e-06
+Epoch [97/100] | Total Loss: 0.8997 | Aux Loss: 0.1560 | Train Loss: 0.7438 (Base: 0.2724, DTW: 0.1056, TopK: 0.4786) | Val Loss:   0.7692 (Base: 0.2860, DTW: 0.1191, TopK: 0.4484) | LR: 1.44e-06
+Epoch [98/100] | Total Loss: 0.9033 | Aux Loss: 0.1575 | Train Loss: 0.7458 (Base: 0.2726, DTW: 0.1060, TopK: 0.4799) | Val Loss:   0.7756 (Base: 0.2861, DTW: 0.1215, TopK: 0.4498) | LR: 1.20e-06
+Epoch [99/100] | Total Loss: 0.9056 | Aux Loss: 0.1573 | Train Loss: 0.7483 (Base: 0.2740, DTW: 0.1059, TopK: 0.4830) | Val Loss:   0.7603 (Base: 0.2839, DTW: 0.1171, TopK: 0.4411) | LR: 1.05e-06
+Epoch [100/100] | Total Loss: 0.9075 | Aux Loss: 0.1576 | Train Loss: 0.7498 (Base: 0.2743, DTW: 0.1062, TopK: 0.4840) | Val Loss:   0.7741 (Base: 0.2869, DTW: 0.1207, TopK: 0.4487) | LR: 2.00e-04
