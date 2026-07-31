@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+*.npy
+*.npz
+/0_Data/pm25/
+/0_Data/weather/
+.codex/
+.agents/
+.git/
+/1_Geographical_features_builder/ne_10m_coastline.shp/
+*.pt
+*.pth

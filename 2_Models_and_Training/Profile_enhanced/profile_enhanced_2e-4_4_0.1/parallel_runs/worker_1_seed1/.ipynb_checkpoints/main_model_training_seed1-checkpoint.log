@@ -1,0 +1,8 @@
+[*] Process seed: 1
+Building static profile features from historical data...
+[*] Total trainable parameters: 2,431,233
+Epoch [1/100] | Train Mixed Loss (Trend, limit=2): 1.0792 (Base: 0.3431, DTW: 0.1956, TopK: 0.6052) | Val Mixed Loss (NoTrend, limit=2): 0.9466 (Base: 0.3520, DTW: 0.1889, TopK: 0.4711) | EMA NoTrend Loss: 0.946572 | LR: 2.00e-04
+Epoch [2/100] | Train Mixed Loss (Trend, limit=2): 0.9890 (Base: 0.3317, DTW: 0.1635, TopK: 0.5980) | Val Mixed Loss (NoTrend, limit=2): 0.8316 (Base: 0.3134, DTW: 0.1487, TopK: 0.5371) | EMA NoTrend Loss: 0.917819 | LR: 2.00e-04
+Epoch [3/100] | Train Mixed Loss (Trend, limit=2): 0.9505 (Base: 0.3235, DTW: 0.1532, TopK: 0.5833) | Val Mixed Loss (NoTrend, limit=2): 0.8004 (Base: 0.2939, DTW: 0.1418, TopK: 0.5540) | EMA NoTrend Loss: 0.888462 | LR: 2.00e-04
+Epoch [4/100] | Train Mixed Loss (Trend, limit=2): 0.9346 (Base: 0.3201, DTW: 0.1489, TopK: 0.5770) | Val Mixed Loss (NoTrend, limit=2): 0.8362 (Base: 0.3189, DTW: 0.1544, TopK: 0.4895) | EMA NoTrend Loss: 0.875407 | LR: 1.99e-04
+Epoch [5/100] | Train Mixed Loss (Trend, limit=2): 0.9205 (Base: 0.3165, DTW: 0.1452, TopK: 0.5722) | Val Mixed Loss (NoTrend, limit=2): 0.7762 (Base: 0.2964, DTW: 0.1322, TopK: 0.5423) | EMA NoTrend Loss: 0.850613 | LR: 1.99e-04

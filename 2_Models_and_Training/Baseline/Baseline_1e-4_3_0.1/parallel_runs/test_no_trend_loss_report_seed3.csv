@@ -1,0 +1,2 @@
+﻿mean_base_loss,mean_dtw_loss,mean_topk_loss,mean_weighted_total_loss,sampled_count,evaluated_count,filtered_count,available_test_windows,sample_fraction,random_seed
+0.3179,0.1840,0.5458,0.9232,596837,596837,0,5968376,0.1,3
