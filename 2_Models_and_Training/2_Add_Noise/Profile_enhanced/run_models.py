@@ -8,12 +8,67 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 import torch.optim as optim
 from tslearn.metrics import SoftDTWLossPyTorch
-from mult_model import (
-    ShortTermPredictorWithFuture,
-    StaticProfileEncoder,
-    get_base_skill_site_indices,
-)
+from mult_model import StaticProfileEncoder, ShortTermPredictorWithFuture
+from weather_error_generator.generate_weather_errors import generate_noisy_weather
 import sys
+
+
+NOISE_DIRECTORY = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    "weather_error_generator",
+)
+with np.load(
+    os.path.join(NOISE_DIRECTORY, "continuous_error_parameters.npz"),
+    allow_pickle=False,
+) as archive:
+    CONTINUOUS_ERROR_PARAMETERS = archive["parameters"]
+with np.load(
+    os.path.join(NOISE_DIRECTORY, "precipitation_error_parameters.npz"),
+    allow_pickle=False,
+) as archive:
+    PRECIPITATION_ERROR_PARAMETERS = archive["parameters"]
+
+
+def add_noise_to_future_weather(
+        future_mets,
+        station_indices,
+        met_mean,
+        met_std,
+        rng,
+):
+    """Apply physical-unit forecast errors to normalized future weather only.
+
+    The normalized 48-by-9 weather sequences are restored to physical units, passed
+    with their shared station-axis indices to generate_noisy_weather, and normalized
+    again with the original training statistics. No PM2.5 tensor enters this function.
+    """
+    met_mean = np.asarray(met_mean, dtype=np.float64)
+    met_scale = np.asarray(met_std, dtype=np.float64) + 1e-8
+    met_mean_tensor = future_mets.new_tensor(met_mean)
+    met_scale_tensor = future_mets.new_tensor(met_scale)
+    future_raw = (
+        future_mets * met_scale_tensor + met_mean_tensor
+    ).detach().cpu().numpy().astype(np.float64)
+    station_indices = station_indices.detach().cpu().numpy().reshape(-1)
+    station_pairs = [
+        (int(station_indices[i]), future_raw[i])
+        for i in range(future_raw.shape[0])
+    ]
+    generated_pairs = generate_noisy_weather(
+        CONTINUOUS_ERROR_PARAMETERS,
+        PRECIPITATION_ERROR_PARAMETERS,
+        station_pairs,
+        rng,
+    )
+    noisy_raw = np.stack([sequence for _, sequence in generated_pairs])
+    noisy_normalized = (
+        noisy_raw - met_mean[None, None, :]
+    ) / met_scale[None, None, :]
+    return torch.as_tensor(
+        noisy_normalized,
+        dtype=future_mets.dtype,
+        device=future_mets.device,
+    )
 
 
 class Logger(object):
@@ -112,16 +167,8 @@ def build_static_features(train_met, train_pol, train_mask, pol_mean, pol_std,
     corrs = torch.stack(corrs, dim=1)
 
     bc_features = torch.cat([pm25_means, pm25_stds, met_means, corrs], dim=1)
-    site_groups = get_base_skill_site_indices()
-    held_out_indices = set(
-        site_groups["low"] + site_groups["mid"] + site_groups["high"]
-    )
-    fit_station_indices = [
-        n for n in range(N) if n not in held_out_indices
-    ]
-    fit_bc_features = bc_features[fit_station_indices]
-    mean_bc = fit_bc_features.mean(dim=0, keepdim=True)
-    std_bc = fit_bc_features.std(dim=0, keepdim=True).clamp(min=1e-8)
+    mean_bc = bc_features.mean(dim=0, keepdim=True)
+    std_bc = bc_features.std(dim=0, keepdim=True).clamp(min=1e-8)
     bc_features = (bc_features - mean_bc) / std_bc
 
     if os.path.exists(geo_csv_path):
@@ -345,6 +392,7 @@ def train_main_model(data_set, output_dir, cache_files, seed):
 
     pol_mean = data_set.pol_mean
     pol_std = data_set.pol_std
+    noise_rng = np.random.default_rng(seed)
 
     total_time_steps = met_data.shape[1]
     expected_time_steps = 4 * hours_per_year
@@ -478,6 +526,13 @@ def train_main_model(data_set, output_dir, cache_files, seed):
             future_mets = future_mets.squeeze(0).to(device)
             targets = targets.squeeze(0).to(device)
             station_ids = station_ids.squeeze(0).to(device)
+            future_mets = add_noise_to_future_weather(
+                future_mets,
+                station_ids,
+                data_set.met_mean,
+                data_set.met_std,
+                noise_rng,
+            )
 
             optimizer.zero_grad()
 
@@ -522,6 +577,13 @@ def train_main_model(data_set, output_dir, cache_files, seed):
                 future_mets = future_mets.squeeze(0).to(device)
                 targets = targets.squeeze(0).to(device)
                 station_ids = station_ids.squeeze(0).to(device)
+                future_mets = add_noise_to_future_weather(
+                    future_mets,
+                    station_ids,
+                    data_set.met_mean,
+                    data_set.met_std,
+                    noise_rng,
+                )
 
                 batch_static_feats = static_features_global[station_ids]
                 profiles = encoder(batch_static_feats)
@@ -601,6 +663,9 @@ def train_main_model(data_set, output_dir, cache_files, seed):
 
 def sample_cached_windows(cache_file, sample_fraction, random_seed):
     """Sample an exact fraction of all cached (station, start) test windows."""
+    if not 0.0 < sample_fraction <= 1.0:
+        raise ValueError("sample_fraction 必须位于 (0, 1]。")
+
     cache_data = torch.load(cache_file, map_location='cpu')
     valid_starts = cache_data['valid_starts']
     station_counts = np.asarray(
@@ -608,8 +673,10 @@ def sample_cached_windows(cache_file, sample_fraction, random_seed):
     )
     cumulative_counts = np.cumsum(station_counts)
     total_windows = int(cumulative_counts[-1]) if len(cumulative_counts) else 0
+    if total_windows == 0:
+        raise RuntimeError("测试集缓存中没有可评估窗口。")
 
-    sampled_count = int(total_windows * sample_fraction)
+    sampled_count = max(1, int(total_windows * sample_fraction))
     rng = np.random.default_rng(random_seed)
     flat_indices = rng.choice(
         total_windows, size=sampled_count, replace=False
@@ -645,14 +712,18 @@ def sample_cached_windows(cache_file, sample_fraction, random_seed):
 
 def evaluate_random_test_subset(
         data_set,
-        test_cache_files,
+        test_cache_file,
         training_result,
         report_file,
-        sample_fraction,
+        sample_fraction=0.1,
         random_seed=10001,
         batch_size=32,
 ):
-    """Evaluate independent low/mid/high test subsets and write three rows."""
+    """Evaluate a fixed random test subset and write one summary row."""
+    station_ids_np, starts_np, total_test_windows = sample_cached_windows(
+        test_cache_file, sample_fraction, random_seed
+    )
+
     device = training_result['device']
     encoder = training_result['encoder']
     predictor = training_result['predictor']
@@ -661,6 +732,7 @@ def evaluate_random_test_subset(
     pred_len = training_result['pred_len']
     pol_mean = training_result['pol_mean']
     pol_std = training_result['pol_std']
+    noise_rng = np.random.default_rng(random_seed)
 
     test_start = 3 * 365 * 24
     test_met = data_set.met_data_normalized[:, test_start:, :].to(device)
@@ -672,7 +744,6 @@ def evaluate_random_test_subset(
     predictor.eval()
     os.makedirs(os.path.dirname(report_file), exist_ok=True)
     fieldnames = [
-        'skill_group',
         'mean_base_loss',
         'mean_dtw_loss',
         'mean_topk_loss',
@@ -684,91 +755,93 @@ def evaluate_random_test_subset(
         'sample_fraction',
         'random_seed',
     ]
-    rows = []
-    for skill_group in ("low", "mid", "high"):
-        station_ids_np, starts_np, total_test_windows = sample_cached_windows(
-            test_cache_files[skill_group], sample_fraction, random_seed
-        )
 
-        total_base_loss = 0.0
-        total_dtw_loss = 0.0
-        total_topk_loss = 0.0
-        total_weighted_loss = 0.0
-        evaluated_count = 0
-        filtered_count = 0
+    total_base_loss = 0.0
+    total_dtw_loss = 0.0
+    total_topk_loss = 0.0
+    total_weighted_loss = 0.0
+    evaluated_count = 0
+    filtered_count = 0
 
-        with torch.no_grad():
-            for batch_start in range(0, len(station_ids_np), batch_size):
-                batch_end = min(batch_start + batch_size, len(station_ids_np))
-                batch_station_ids_np = station_ids_np[batch_start:batch_end]
-                batch_starts_np = starts_np[batch_start:batch_end]
+    with torch.no_grad():
+        for batch_start in range(0, len(station_ids_np), batch_size):
+            batch_end = min(batch_start + batch_size, len(station_ids_np))
+            batch_station_ids_np = station_ids_np[batch_start:batch_end]
+            batch_starts_np = starts_np[batch_start:batch_end]
 
-                station_ids = torch.from_numpy(
-                    batch_station_ids_np
-                ).to(device=device, dtype=torch.long)
-                starts = torch.from_numpy(
-                    batch_starts_np
-                ).to(device=device, dtype=torch.long)
+            station_ids = torch.from_numpy(
+                batch_station_ids_np
+            ).to(device=device, dtype=torch.long)
+            starts = torch.from_numpy(
+                batch_starts_np
+            ).to(device=device, dtype=torch.long)
 
-                sid_idx = station_ids.unsqueeze(1)
-                short_idx = starts.unsqueeze(1) + torch.arange(
-                    T_short, device=device
-                )
-                target_idx = (starts + T_short).unsqueeze(1) + torch.arange(
-                    pred_len, device=device
-                )
-
-                short_segs = x_data[sid_idx, short_idx, :]
-                short_masks = test_mask[sid_idx, short_idx]
-                targets = x_data[sid_idx, target_idx, :]
-                future_mets = targets[:, :, :-1]
-
-                profiles = encoder(static_features[station_ids])
-                preds = predictor(
-                    short_segs,
-                    profiles,
-                    future_met=future_mets,
-                    mask=short_masks,
-                )
-                (
-                    base_losses,
-                    dtw_losses,
-                    topk_losses,
-                    weighted_losses,
-                ) = pm25_no_trend_loss_components(
-                    preds, targets, pol_mean=pol_mean, pol_std=pol_std
-                )
-
-                pm25_targets = targets[:, :, -1]
-                pm25_targets_raw = pm25_targets * pol_std + pol_mean
-                valid_mask = (pm25_targets_raw <= 1000).all(dim=1)
-                valid_count = int(valid_mask.sum().item())
-                evaluated_count += valid_count
-                filtered_count += (batch_end - batch_start) - valid_count
-                total_base_loss += base_losses.sum().item()
-                total_dtw_loss += dtw_losses.sum().item()
-                total_topk_loss += topk_losses.sum().item()
-                total_weighted_loss += weighted_losses.sum().item()
-
-        if evaluated_count > 0:
-            mean_base_loss = total_base_loss / evaluated_count
-            mean_dtw_loss = total_dtw_loss / evaluated_count
-            mean_topk_loss = total_topk_loss / evaluated_count
-            mean_weighted_total_loss = (
-                total_weighted_loss / evaluated_count
+            sid_idx = station_ids.unsqueeze(1)
+            short_idx = starts.unsqueeze(1) + torch.arange(
+                T_short, device=device
             )
-        else:
-            mean_base_loss = float('nan')
-            mean_dtw_loss = float('nan')
-            mean_topk_loss = float('nan')
-            mean_weighted_total_loss = float('nan')
+            target_idx = (starts + T_short).unsqueeze(1) + torch.arange(
+                pred_len, device=device
+            )
 
-        rows.append({
-            'skill_group': skill_group,
-            'mean_base_loss': mean_base_loss,
-            'mean_dtw_loss': mean_dtw_loss,
-            'mean_topk_loss': mean_topk_loss,
-            'mean_weighted_total_loss': mean_weighted_total_loss,
+            short_segs = x_data[sid_idx, short_idx, :]
+            short_masks = test_mask[sid_idx, short_idx]
+            targets = x_data[sid_idx, target_idx, :]
+            future_mets = targets[:, :, :-1]
+            future_mets = add_noise_to_future_weather(
+                future_mets,
+                station_ids,
+                data_set.met_mean,
+                data_set.met_std,
+                noise_rng,
+            )
+
+            profiles = encoder(static_features[station_ids])
+            preds = predictor(
+                short_segs,
+                profiles,
+                future_met=future_mets,
+                mask=short_masks,
+            )
+            (
+                base_losses,
+                dtw_losses,
+                topk_losses,
+                weighted_losses,
+            ) = pm25_no_trend_loss_components(
+                preds, targets, pol_mean=pol_mean, pol_std=pol_std
+            )
+
+            pm25_targets = targets[:, :, -1]
+            pm25_targets_raw = pm25_targets * pol_std + pol_mean
+            valid_mask = (pm25_targets_raw <= 1000).all(dim=1)
+            valid_count = int(valid_mask.sum().item())
+            evaluated_count += valid_count
+            filtered_count += (batch_end - batch_start) - valid_count
+            total_base_loss += base_losses.sum().item()
+            total_dtw_loss += dtw_losses.sum().item()
+            total_topk_loss += topk_losses.sum().item()
+            total_weighted_loss += weighted_losses.sum().item()
+
+    if evaluated_count > 0:
+        mean_base_loss = total_base_loss / evaluated_count
+        mean_dtw_loss = total_dtw_loss / evaluated_count
+        mean_topk_loss = total_topk_loss / evaluated_count
+        mean_weighted_total_loss = total_weighted_loss / evaluated_count
+    else:
+        mean_base_loss = float('nan')
+        mean_dtw_loss = float('nan')
+        mean_topk_loss = float('nan')
+        mean_weighted_total_loss = float('nan')
+
+    with open(report_file, 'w', newline='', encoding='utf-8-sig') as report:
+        writer = csv.DictWriter(report, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerow({
+            'mean_base_loss': f"{mean_base_loss:.4f}",
+            'mean_dtw_loss': f"{mean_dtw_loss:.4f}",
+            'mean_topk_loss': f"{mean_topk_loss:.4f}",
+            'mean_weighted_total_loss': f"{mean_weighted_total_loss:.4f}",
             'sampled_count': len(station_ids_np),
             'evaluated_count': evaluated_count,
             'filtered_count': filtered_count,
@@ -777,21 +850,13 @@ def evaluate_random_test_subset(
             'random_seed': random_seed,
         })
 
-    with open(report_file, 'w', newline='', encoding='utf-8-sig') as report:
-        writer = csv.DictWriter(report, fieldnames=fieldnames)
-        writer.writeheader()
-        for row in rows:
-            writer.writerow({
-                **row,
-                'mean_base_loss': f"{row['mean_base_loss']:.4f}",
-                'mean_dtw_loss': f"{row['mean_dtw_loss']:.4f}",
-                'mean_topk_loss': f"{row['mean_topk_loss']:.4f}",
-                'mean_weighted_total_loss': (
-                    f"{row['mean_weighted_total_loss']:.4f}"
-                ),
-            })
-
     return {
-        row['skill_group']: {**row, 'report_file': report_file}
-        for row in rows
+        'sampled_count': len(station_ids_np),
+        'evaluated_count': evaluated_count,
+        'filtered_count': filtered_count,
+        'mean_base_loss': mean_base_loss,
+        'mean_dtw_loss': mean_dtw_loss,
+        'mean_topk_loss': mean_topk_loss,
+        'mean_weighted_total_loss': mean_weighted_total_loss,
+        'report_file': report_file,
     }

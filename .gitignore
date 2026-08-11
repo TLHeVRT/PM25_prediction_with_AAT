@@ -10,3 +10,5 @@ __pycache__/
 /1_Geographical_features_builder/ne_10m_coastline.shp/
 *.pt
 *.pth
+/2_Models_and_Training/2_Add_Noise/IFS_forecast_data/ifs/
+/2_Models_and_Training/2_Add_Noise/IFS_forecast_data/era5/

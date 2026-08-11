@@ -1,7 +1,6 @@
 import os
 import torch
 from tqdm import tqdm
-from mult_model import get_base_skill_site_indices
 
 
 def max_consecutive_repeat_count(windows, eps=1e-4):
@@ -38,23 +37,21 @@ def generate_and_save_cache(
         cache_file,
         pol_mean,
         pol_std,
-        station_indices,
 ):
     N_stations = met_data.shape[0]
     T_total = met_data.shape[1]
     total_window = T_short + pred_len
 
-    valid_starts_per_station = [
-        torch.tensor([], dtype=torch.long) for _ in range(N_stations)
-    ]
+    valid_starts_per_station = []
     eps = 1e-4
 
-    for n in tqdm(station_indices, desc=f"扫描站点 (总时间步={T_total})"):
+    for n in tqdm(range(N_stations), desc=f"扫描站点 (总时间步={T_total})"):
         mask_n = mask_data[n]
         pol_n = pol_data[n]
 
         max_start = T_total - total_window
         if max_start <= 0:
+            valid_starts_per_station.append(torch.tensor([], dtype=torch.long))
             continue
 
         cumsum = torch.cumsum(mask_n, dim=0)
@@ -106,11 +103,12 @@ def generate_and_save_cache(
             fraud_mask = torch.cat(fraud_mask_list, dim=0)
             valid_starts = valid_starts[fraud_mask]
 
-        valid_starts_per_station[n] = valid_starts
+        valid_starts_per_station.append(valid_starts)
 
-    eligible_stations = [
-        n for n in station_indices if len(valid_starts_per_station[n]) >= 1
-    ]
+    eligible_stations = []
+    for n in range(N_stations):
+        if len(valid_starts_per_station[n]) >= 1:
+            eligible_stations.append(n)
     eligible_stations = torch.tensor(eligible_stations, dtype=torch.long)
 
     torch.save({
@@ -138,16 +136,6 @@ def generate_split_caches(
 
     train_end = 2 * hours_per_year
     val_end = 3 * hours_per_year
-    site_groups = get_base_skill_site_indices()
-    test_station_indices = {
-        group: sorted(site_groups[group]) for group in ("low", "mid", "high")
-    }
-    test_station_set = set(
-        site_groups["low"] + site_groups["mid"] + site_groups["high"]
-    )
-    train_station_indices = [
-        n for n in range(met_data.shape[0]) if n not in test_station_set
-    ]
 
     train_met = met_data[:, :train_end, :]
     train_pol = pol_data[:, :train_end]
@@ -170,14 +158,10 @@ def generate_split_caches(
             output_dir,
             f"dataset_cache_val_y3_T{T_short}_P{pred_len}_seed{seed}.pt",
         ),
-        'test': {
-            group: os.path.join(
-                output_dir,
-                f"dataset_cache_test_{group}_y4_"
-                f"T{T_short}_P{pred_len}_seed{seed}.pt",
-            )
-            for group in ("low", "mid", "high")
-        },
+        'test': os.path.join(
+            output_dir,
+            f"dataset_cache_test_y4_T{T_short}_P{pred_len}_seed{seed}.pt",
+        ),
     }
 
     print("\n[1/3] 正在处理【训练集：第1-2年】...")
@@ -191,7 +175,6 @@ def generate_split_caches(
         train_cache_file,
         pol_mean=data_set.pol_mean,
         pol_std=data_set.pol_std,
-        station_indices=train_station_indices,
     )
 
     print("\n[2/3] 正在处理【验证集：第3年】...")
@@ -205,21 +188,19 @@ def generate_split_caches(
         val_cache_file,
         pol_mean=data_set.pol_mean,
         pol_std=data_set.pol_std,
-        station_indices=train_station_indices,
     )
 
-    for skill_group in ("low", "mid", "high"):
-        print(f"\n正在处理【{skill_group} 测试集：第4年】...")
-        generate_and_save_cache(
-            test_met,
-            test_pol,
-            test_mask,
-            T_short,
-            pred_len,
-            cache_files['test'][skill_group],
-            pol_mean=data_set.pol_mean,
-            pol_std=data_set.pol_std,
-            station_indices=test_station_indices[skill_group],
-        )
+    print("\n[3/3] 正在处理【测试集：第4年】...")
+    test_cache_file = cache_files['test']
+    generate_and_save_cache(
+        test_met,
+        test_pol,
+        test_mask,
+        T_short,
+        pred_len,
+        test_cache_file,
+        pol_mean=data_set.pol_mean,
+        pol_std=data_set.pol_std,
+    )
 
     return cache_files

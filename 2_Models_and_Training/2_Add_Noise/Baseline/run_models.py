@@ -1,13 +1,73 @@
 import os
 
 import random
+import numpy as np
 import torch
 
 from torch.utils.data import Dataset, DataLoader
 import torch.optim as optim
 from tslearn.metrics import SoftDTWLossPyTorch
 from mult_model import BaselineTransformer, DataSet
+from weather_error_generator.generate_weather_errors import generate_noisy_weather
 import sys
+
+
+NOISE_DIRECTORY = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    "weather_error_generator",
+)
+with np.load(
+    os.path.join(NOISE_DIRECTORY, "continuous_error_parameters.npz"),
+    allow_pickle=False,
+) as archive:
+    CONTINUOUS_ERROR_PARAMETERS = archive["parameters"]
+with np.load(
+    os.path.join(NOISE_DIRECTORY, "precipitation_error_parameters.npz"),
+    allow_pickle=False,
+) as archive:
+    PRECIPITATION_ERROR_PARAMETERS = archive["parameters"]
+
+
+def add_noise_to_future_weather(
+        future_mets,
+        station_indices,
+        met_mean,
+        met_std,
+        rng,
+):
+    """Apply physical-unit forecast errors to normalized future weather only.
+
+    The normalized 48-by-9 weather sequences are restored to physical units, passed
+    with their shared station-axis indices to generate_noisy_weather, and normalized
+    again with the original training statistics. No PM2.5 tensor enters this function.
+    """
+    met_mean = np.asarray(met_mean, dtype=np.float64)
+    met_scale = np.asarray(met_std, dtype=np.float64) + 1e-8
+    met_mean_tensor = future_mets.new_tensor(met_mean)
+    met_scale_tensor = future_mets.new_tensor(met_scale)
+    future_raw = (
+        future_mets * met_scale_tensor + met_mean_tensor
+    ).detach().cpu().numpy().astype(np.float64)
+    station_indices = station_indices.detach().cpu().numpy().reshape(-1)
+    station_pairs = [
+        (int(station_indices[i]), future_raw[i])
+        for i in range(future_raw.shape[0])
+    ]
+    generated_pairs = generate_noisy_weather(
+        CONTINUOUS_ERROR_PARAMETERS,
+        PRECIPITATION_ERROR_PARAMETERS,
+        station_pairs,
+        rng,
+    )
+    noisy_raw = np.stack([sequence for _, sequence in generated_pairs])
+    noisy_normalized = (
+        noisy_raw - met_mean[None, None, :]
+    ) / met_scale[None, None, :]
+    return torch.as_tensor(
+        noisy_normalized,
+        dtype=future_mets.dtype,
+        device=future_mets.device,
+    )
 
 
 
@@ -254,6 +314,7 @@ def run_experiment(exp_dir, cache_dir, data_path, seed, nhead=8):
 
     pol_mean = data_set.pol_mean
     pol_std = data_set.pol_std
+    noise_rng = np.random.default_rng(seed)
 
     one_year_steps = 365 * 24
     train_end = one_year_steps * 2
@@ -348,6 +409,14 @@ def run_experiment(exp_dir, cache_dir, data_path, seed, nhead=8):
             short_masks = short_masks.squeeze(0).to(device)
             future_mets = future_mets.squeeze(0).to(device)
             targets = targets.squeeze(0).to(device)
+            station_ids = station_ids.squeeze(0)
+            future_mets = add_noise_to_future_weather(
+                future_mets,
+                station_ids,
+                data_set.met_mean,
+                data_set.met_std,
+                noise_rng,
+            )
 
             optimizer.zero_grad()
             preds = predictor(short_segs, future_met=future_mets, mask=short_masks)
@@ -388,6 +457,14 @@ def run_experiment(exp_dir, cache_dir, data_path, seed, nhead=8):
                 short_masks = short_masks.squeeze(0).to(device)
                 future_mets = future_mets.squeeze(0).to(device)
                 targets = targets.squeeze(0).to(device)
+                station_ids = station_ids.squeeze(0)
+                future_mets = add_noise_to_future_weather(
+                    future_mets,
+                    station_ids,
+                    data_set.met_mean,
+                    data_set.met_std,
+                    noise_rng,
+                )
 
                 preds = predictor(short_segs, future_met=future_mets, mask=short_masks)
 

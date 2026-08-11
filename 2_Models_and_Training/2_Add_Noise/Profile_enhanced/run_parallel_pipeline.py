@@ -8,7 +8,7 @@ import sys
 sys.dont_write_bytecode = True
 
 OUTPUT_ROOT = "parallel_runs"
-TEST_SAMPLE_FRACTION = 1.0
+TEST_SAMPLE_FRACTION = 0.1
 
 
 def validate_seed(value):
@@ -92,9 +92,9 @@ def run_worker(worker_id, seed, output_root, cpu_threads):
     report_file = os.path.join(
         worker_dir, f"test_no_trend_loss_report_seed{seed}.csv"
     )
-    summaries = evaluate_random_test_subset(
+    summary = evaluate_random_test_subset(
         data_set=data_set,
-        test_cache_files=cache_files["test"],
+        test_cache_file=cache_files["test"],
         training_result=training_result,
         report_file=report_file,
         sample_fraction=TEST_SAMPLE_FRACTION,
@@ -102,18 +102,15 @@ def run_worker(worker_id, seed, output_root, cpu_threads):
         batch_size=32,
     )
 
-    for skill_group in ("low", "mid", "high"):
-        summary = summaries[skill_group]
-        print(
-            f"[Worker {worker_id} | seed={seed} | {skill_group}] "
-            f"完成：{TEST_SAMPLE_FRACTION:.0%} 测试抽样 "
-            f"{summary['sampled_count']}，按统一规则过滤 "
-            f"{summary['filtered_count']}，Base "
-            f"{summary['mean_base_loss']:.4f}，DTW "
-            f"{summary['mean_dtw_loss']:.4f}，TopK "
-            f"{summary['mean_topk_loss']:.4f}，加权总损失 "
-            f"{summary['mean_weighted_total_loss']:.4f}"
-        )
+    print(
+        f"[Worker {worker_id} | seed={seed}] 完成：测试抽样 "
+        f"{summary['sampled_count']}，按统一规则过滤 "
+        f"{summary['filtered_count']}，Base "
+        f"{summary['mean_base_loss']:.4f}，DTW "
+        f"{summary['mean_dtw_loss']:.4f}，TopK "
+        f"{summary['mean_topk_loss']:.4f}，加权总损失 "
+        f"{summary['mean_weighted_total_loss']:.4f}"
+    )
 
 
 def parse_args():

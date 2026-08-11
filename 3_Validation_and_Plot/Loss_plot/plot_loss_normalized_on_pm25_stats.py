@@ -26,7 +26,7 @@ def main(loss_file):
     data_file = BASE_DIR / "data_matrix.npy"
     feature_file = BASE_DIR / "station_features.csv"
     out_png_total = BASE_DIR / "Normalized_Total_Loss_loss_vs_pm25_distribution.png"
-    out_png_base = BASE_DIR / "Normalized_Base_Loss_loss_vs_pm25_distribution.png"
+    out_png_base = BASE_DIR / "Normalized_MAE_Loss_loss_vs_pm25_distribution.png"
     hours_per_year = 365 * 24
     max_valid = 1000.0
     vmax_quantile = 0.95
@@ -131,7 +131,7 @@ def main(loss_file):
     )
     cbar_base = plt.colorbar(scatter_base)
     cbar_base.set_label(
-        "Normalized Base Loss (Base_Loss / Std)",
+        "Normalized MAE Loss (MAE_Loss / Std)",
         fontsize=12,
         fontweight="bold",
     )
@@ -144,7 +144,7 @@ def main(loss_file):
     plt.xlim(0, x_max)
     plt.ylim(0, y_max)
     plt.title(
-        "Normalized Base Loss vs. PM2.5 Distribution",
+        "Normalized MAE Loss vs. PM2.5 Distribution",
         fontsize=14,
         fontweight="bold",
     )

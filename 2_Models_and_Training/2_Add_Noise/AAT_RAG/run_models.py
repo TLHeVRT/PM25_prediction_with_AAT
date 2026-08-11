@@ -2,6 +2,7 @@ import os
 
 import random
 import csv
+import numpy as np
 import pandas as pd
 import torch
 
@@ -17,9 +18,68 @@ from mult_model import (
     HOURS_PER_YEAR,
     ShortTermPredictorWithFuture,
     StaticProfileEncoder,
-    get_base_skill_site_indices,
 )
+from weather_error_generator.generate_weather_errors import generate_noisy_weather
 import sys
+
+
+NOISE_DIRECTORY = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    "weather_error_generator",
+)
+with np.load(
+    os.path.join(NOISE_DIRECTORY, "continuous_error_parameters.npz"),
+    allow_pickle=False,
+) as archive:
+    CONTINUOUS_ERROR_PARAMETERS = archive["parameters"]
+with np.load(
+    os.path.join(NOISE_DIRECTORY, "precipitation_error_parameters.npz"),
+    allow_pickle=False,
+) as archive:
+    PRECIPITATION_ERROR_PARAMETERS = archive["parameters"]
+
+
+def add_noise_to_future_weather(
+        future_mets,
+        station_indices,
+        met_mean,
+        met_std,
+        rng,
+):
+    """Apply physical-unit forecast errors to the normalized main future weather.
+
+    The normalized 48-by-9 main weather sequences are restored to physical units,
+    passed with their shared station-axis indices to generate_noisy_weather, and
+    normalized again with the original training statistics. PM2.5 targets and every
+    retrieved auxiliary sequence remain outside this function and are unchanged.
+    """
+    met_mean = np.asarray(met_mean, dtype=np.float64)
+    met_scale = np.asarray(met_std, dtype=np.float64) + 1e-8
+    met_mean_tensor = future_mets.new_tensor(met_mean)
+    met_scale_tensor = future_mets.new_tensor(met_scale)
+    future_raw = (
+        future_mets * met_scale_tensor + met_mean_tensor
+    ).detach().cpu().numpy().astype(np.float64)
+    station_indices = station_indices.detach().cpu().numpy().reshape(-1)
+    station_pairs = [
+        (int(station_indices[i]), future_raw[i])
+        for i in range(future_raw.shape[0])
+    ]
+    generated_pairs = generate_noisy_weather(
+        CONTINUOUS_ERROR_PARAMETERS,
+        PRECIPITATION_ERROR_PARAMETERS,
+        station_pairs,
+        rng,
+    )
+    noisy_raw = np.stack([sequence for _, sequence in generated_pairs])
+    noisy_normalized = (
+        noisy_raw - met_mean[None, None, :]
+    ) / met_scale[None, None, :]
+    return torch.as_tensor(
+        noisy_normalized,
+        dtype=future_mets.dtype,
+        device=future_mets.device,
+    )
 
 
 class Logger(object):
@@ -124,16 +184,8 @@ def build_static_features(train_met, train_pol, train_mask, pol_mean, pol_std,
     corrs = torch.stack(corrs, dim=1)
 
     bc_features = torch.cat([pm25_means, pm25_stds, met_means, corrs], dim=1)
-    site_groups = get_base_skill_site_indices()
-    held_out_indices = set(
-        site_groups["low"] + site_groups["mid"] + site_groups["high"]
-    )
-    fit_station_indices = [
-        n for n in range(N) if n not in held_out_indices
-    ]
-    fit_bc_features = bc_features[fit_station_indices]
-    mean_bc = fit_bc_features.mean(dim=0, keepdim=True)
-    std_bc = fit_bc_features.std(dim=0, keepdim=True).clamp(min=1e-8)
+    mean_bc = bc_features.mean(dim=0, keepdim=True)
+    std_bc = bc_features.std(dim=0, keepdim=True).clamp(min=1e-8)
     bc_features = (bc_features - mean_bc) / std_bc
 
     if os.path.exists(geo_csv_path):
@@ -343,7 +395,7 @@ class RandomPredictionSubset(Dataset):
             pol_data,
             mask_data,
             cache_file,
-            fraction,
+            fraction=0.1,
             seed=0,
             T_short=144,
             pred_len=48,
@@ -367,9 +419,7 @@ class RandomPredictionSubset(Dataset):
 
         sample_count = max(1, int(round(total_samples * fraction)))
         generator = torch.Generator().manual_seed(seed)
-        sampled_flat_indices = torch.randperm(
-            total_samples, generator=generator
-        )[:sample_count]
+        sampled_flat_indices = torch.randperm(total_samples, generator=generator)[:sample_count]
 
         cumulative_lengths = torch.cumsum(lengths, dim=0)
         self.station_ids = torch.searchsorted(
@@ -605,7 +655,7 @@ def prepare_global_memory_bank(
     )
     test_pred_ds = PredictionDatasetWithFuture(
         test_met, test_pol, test_mask,
-        cache_file=cache_paths["aux_test"],
+        cache_file=cache_paths["test"],
         R_stations=1, num_iterations=1
     )
 
@@ -701,6 +751,7 @@ def train_main_model(
 
     pol_mean = data_set.pol_mean
     pol_std = data_set.pol_std
+    noise_rng = np.random.default_rng(seed)
 
     train_end = data_set.train_end
     val_end = data_set.val_end
@@ -823,6 +874,13 @@ def train_main_model(
             targets = targets.squeeze(0).to(device)
             station_ids = station_ids.squeeze(0).to(device)
             starts_batch = starts_batch.squeeze(0).to(device)
+            future_mets = add_noise_to_future_weather(
+                future_mets,
+                station_ids,
+                data_set.met_mean,
+                data_set.met_std,
+                noise_rng,
+            )
 
             optimizer.zero_grad()
 
@@ -930,6 +988,13 @@ def train_main_model(
                 targets = targets.squeeze(0).to(device)
                 station_ids = station_ids.squeeze(0).to(device)
                 starts_batch = starts_batch.squeeze(0).to(device)
+                future_mets = add_noise_to_future_weather(
+                    future_mets,
+                    station_ids,
+                    data_set.met_mean,
+                    data_set.met_std,
+                    noise_rng,
+                )
 
                 curr_vecs = light_encoder(short_segs)
                 # Year 3 uses global indices and may retrieve any earlier sequence.
@@ -1013,14 +1078,14 @@ def evaluate_random_test_subset(
         model_path,
         bank_global,
         cache_paths,
-        test_fraction,
         data_set=None,
+        test_fraction=0.1,
         batch_size=16,
         T_short=144,
         pred_len=48,
         seed=None,
 ):
-    """Evaluate independent low/mid/high test subsets and write three rows."""
+    """Evaluate an exact random fraction of cached test samples and write one CSV report."""
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     if data_set is None:
         data_set = DataSet('data_matrix.npy')
@@ -1030,6 +1095,7 @@ def evaluate_random_test_subset(
     torch.manual_seed(seed)
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed)
+    noise_rng = np.random.default_rng(seed)
 
     met_data = data_set.met_data_normalized
     pol_data = data_set.pol_data_normalized
@@ -1052,6 +1118,15 @@ def evaluate_random_test_subset(
     test_met = met_data[:, val_end:, :].to(device)
     test_pol = pol_data[:, val_end:].to(device)
     test_mask = mask_data[:, val_end:].to(device)
+    test_ds = RandomPredictionSubset(
+        test_met, test_pol, test_mask,
+        cache_file=cache_paths["test"],
+        fraction=test_fraction,
+        seed=seed,
+        T_short=T_short,
+        pred_len=pred_len,
+    )
+    test_loader = DataLoader(test_ds, batch_size=batch_size, shuffle=False, num_workers=0)
 
     light_encoder = CNN1DEncoder(in_channels=10, d_model=128).to(device)
     light_encoder.load_state_dict(torch.load(encoder_path, map_location=device))
@@ -1083,134 +1158,118 @@ def evaluate_random_test_subset(
         [met_data.to(device), pol_data.to(device).unsqueeze(-1)], dim=-1
     )
 
-    rows = []
-    for skill_group in ("low", "mid", "high"):
-        random.seed(seed)
-        torch.manual_seed(seed)
-        if torch.cuda.is_available():
-            torch.cuda.manual_seed_all(seed)
-
-        test_ds = RandomPredictionSubset(
-            test_met,
-            test_pol,
-            test_mask,
-            cache_file=cache_paths["test"][skill_group],
-            fraction=test_fraction,
-            seed=seed,
-            T_short=T_short,
-            pred_len=pred_len,
-        )
-        test_loader = DataLoader(
-            test_ds, batch_size=batch_size, shuffle=False, num_workers=0
-        )
-
-        base_sum = 0.0
-        dtw_sum = 0.0
-        topk_sum = 0.0
-        total_loss_sum = 0.0
-        valid_sample_count = 0
-        with torch.inference_mode():
-            for (
-                short_segs,
-                short_masks,
+    base_sum = 0.0
+    dtw_sum = 0.0
+    topk_sum = 0.0
+    total_loss_sum = 0.0
+    valid_sample_count = 0
+    with torch.inference_mode():
+        for short_segs, short_masks, future_mets, targets, station_ids, starts_batch in test_loader:
+            short_segs = short_segs.to(device)
+            short_masks = short_masks.to(device)
+            future_mets = future_mets.to(device)
+            targets = targets.to(device)
+            station_ids = station_ids.to(device)
+            starts_batch = starts_batch.to(device)
+            starts_batch_global = starts_batch + val_end
+            future_mets = add_noise_to_future_weather(
                 future_mets,
-                targets,
                 station_ids,
-                starts_batch,
-            ) in test_loader:
-                short_segs = short_segs.to(device)
-                short_masks = short_masks.to(device)
-                future_mets = future_mets.to(device)
-                targets = targets.to(device)
-                station_ids = station_ids.to(device)
-                starts_batch = starts_batch.to(device)
-                starts_batch_global = starts_batch + val_end
-
-                curr_vecs = light_encoder(short_segs)
-                matched_seqs, matched_station_ids = retrieve_top10_sequences(
-                    curr_vecs,
-                    starts_batch_global,
-                    bank_vectors,
-                    bank_norms,
-                    bank_stids,
-                    bank_starts,
-                    global_x_data,
-                    T_short,
-                    pred_len,
-                )
-                profiles = encoder(static_features_global[station_ids])
-                aux_profiles = encoder(
-                    static_features_global[matched_station_ids]
-                )
-                preds, _ = predictor(
-                    short_segs,
-                    profiles,
-                    future_met=future_mets,
-                    mask=short_masks,
-                    matched_hist=matched_seqs,
-                    aux_profiles=aux_profiles,
-                )
-
-                valid_mask, base_seq, dtw_seq, topk_seq, total_seq = test_loss(
-                    preds, targets, pol_mean=pol_mean, pol_std=pol_std
-                )
-                valid_sample_count += int(valid_mask.sum().item())
-                base_sum += base_seq.sum().item()
-                dtw_sum += dtw_seq.sum().item()
-                topk_sum += topk_seq.sum().item()
-                total_loss_sum += total_seq.sum().item()
-
-        if valid_sample_count == 0:
-            raise RuntimeError(
-                f"No valid {skill_group} test samples were produced."
+                data_set.met_mean,
+                data_set.met_std,
+                noise_rng,
             )
 
-        rows.append({
-            "skill_group": skill_group,
-            "mean_base_loss": base_sum / valid_sample_count,
-            "mean_dtw_loss": dtw_sum / valid_sample_count,
-            "mean_topk_loss": topk_sum / valid_sample_count,
-            "mean_weighted_total_loss": (
-                total_loss_sum / valid_sample_count
-            ),
-            "sampled_count": test_ds.sample_count,
-            "evaluated_count": valid_sample_count,
-            "filtered_count": test_ds.sample_count - valid_sample_count,
-            "available_test_windows": test_ds.total_candidate_samples,
-            "sample_fraction": test_fraction,
-            "random_seed": seed,
-        })
+            curr_vecs = light_encoder(short_segs)
+            matched_seqs, matched_station_ids = retrieve_top10_sequences(
+                curr_vecs,
+                starts_batch_global,
+                bank_vectors,
+                bank_norms,
+                bank_stids,
+                bank_starts,
+                global_x_data,
+                T_short,
+                pred_len,
+            )
+            profiles = encoder(static_features_global[station_ids])
+            aux_profiles = encoder(static_features_global[matched_station_ids])
+            preds, _ = predictor(
+                short_segs,
+                profiles,
+                future_met=future_mets,
+                mask=short_masks,
+                matched_hist=matched_seqs,
+                aux_profiles=aux_profiles,
+            )
 
-    report_path = os.path.join(
-        output_dir, f"test_no_trend_loss_report_seed{seed}.csv"
-    )
+            valid_mask, base_seq, dtw_seq, topk_seq, total_seq = test_loss(
+                preds, targets, pol_mean=pol_mean, pol_std=pol_std
+            )
+            valid_sample_count += int(valid_mask.sum().item())
+            base_sum += base_seq.sum().item()
+            dtw_sum += dtw_seq.sum().item()
+            topk_sum += topk_seq.sum().item()
+            total_loss_sum += total_seq.sum().item()
+
+    if valid_sample_count == 0:
+        raise RuntimeError("No valid test samples were produced for the loss report.")
+
+    mean_base = base_sum / valid_sample_count
+    mean_dtw = dtw_sum / valid_sample_count
+    mean_topk = topk_sum / valid_sample_count
+    mean_total_loss = total_loss_sum / valid_sample_count
+    common_report_values = {
+        "valid_sample_count": valid_sample_count,
+        "sampled_sample_count": test_ds.sample_count,
+        "total_candidate_samples": test_ds.total_candidate_samples,
+        "test_fraction": test_fraction,
+        "seed": seed,
+    }
+    rows = [
+        {
+            "loss_item": "base",
+            "nominal_weight": 1.0,
+            "mean_loss": mean_base,
+            "sum_loss": base_sum,
+            **common_report_values,
+        },
+        {
+            "loss_item": "dtw",
+            "nominal_weight": 2.4,
+            "mean_loss": mean_dtw,
+            "sum_loss": dtw_sum,
+            **common_report_values,
+        },
+        {
+            "loss_item": "topk",
+            "nominal_weight": 0.3,
+            "mean_loss": mean_topk,
+            "sum_loss": topk_sum,
+            **common_report_values,
+        },
+        {
+            "loss_item": "total_without_trend",
+            "nominal_weight": "combined",
+            "mean_loss": mean_total_loss,
+            "sum_loss": total_loss_sum,
+            **common_report_values,
+        },
+    ]
+
+    report_path = os.path.join(output_dir, f"test_loss_report_seed{seed}.csv")
     fieldnames = list(rows[0].keys())
     with open(report_path, "w", newline="", encoding="utf-8-sig") as report_file:
         writer = csv.DictWriter(report_file, fieldnames=fieldnames)
         writer.writeheader()
-        for row in rows:
-            writer.writerow({
-                **row,
-                "mean_base_loss": f"{row['mean_base_loss']:.4f}",
-                "mean_dtw_loss": f"{row['mean_dtw_loss']:.4f}",
-                "mean_topk_loss": f"{row['mean_topk_loss']:.4f}",
-                "mean_weighted_total_loss": (
-                    f"{row['mean_weighted_total_loss']:.4f}"
-                ),
-            })
+        writer.writerows(rows)
 
-    for row in rows:
-        print(
-            f"Run {run_id} {row['skill_group']} test report: "
-            f"valid={row['evaluated_count']}, "
-            f"sampled={row['sampled_count']}, "
-            f"candidates={row['available_test_windows']}, "
-            f"Base={row['mean_base_loss']:.4f}, "
-            f"DTW={row['mean_dtw_loss']:.4f}, "
-            f"TopK={row['mean_topk_loss']:.4f}, "
-            f"No-trend total={row['mean_weighted_total_loss']:.4f}, "
-            f"path={report_path}"
-        )
+    print(
+        f"Run {run_id} test report: valid={valid_sample_count}, "
+        f"sampled={test_ds.sample_count}, candidates={test_ds.total_candidate_samples}, "
+        f"Base={mean_base:.6f}, DTW={mean_dtw:.6f}, TopK={mean_topk:.6f}, "
+        f"No-trend total={mean_total_loss:.6f}, path={report_path}"
+    )
     return report_path
 
 

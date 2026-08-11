@@ -3,24 +3,6 @@ import torch
 from torch.utils.data import Dataset
 import torch.nn as nn
 import torch.nn.functional as F
-from pathlib import Path
-
-
-def get_base_skill_site_indices():
-    base_skill = np.loadtxt(
-        Path(__file__).with_name("base_skill.csv"),
-        delimiter=",",
-        skiprows=1,
-        usecols=1,
-    )
-    sorted_indices = np.argsort(base_skill, kind="stable")
-    mid_start = (len(sorted_indices) - 100) // 2
-
-    return {
-        "low": sorted_indices[:100].tolist(),
-        "mid": sorted_indices[mid_start:mid_start + 100].tolist(),
-        "high": sorted_indices[-100:].tolist(),
-    }
 
 class StaticProfileEncoder(nn.Module):
     """Static profile encoder."""
@@ -135,15 +117,8 @@ class DataSet():
         calc_start = 0
         calc_end = 365 * 24 * 2
 
-        site_groups = get_base_skill_site_indices()
-        held_out_indices = (
-            site_groups["low"] + site_groups["mid"] + site_groups["high"]
-        )
-        fit_site_mask = torch.ones(raw_data.shape[0], dtype=torch.bool)
-        fit_site_mask[held_out_indices] = False
-
-        met_calc_data = met_data_raw[fit_site_mask, calc_start:calc_end, :]
-        pol_calc_data = pol_data_raw[fit_site_mask, calc_start:calc_end]
+        met_calc_data = met_data_raw[:, calc_start:calc_end, :]
+        pol_calc_data = pol_data_raw[:, calc_start:calc_end]
         valid_pm25_calc = (
             ~torch.isnan(pol_calc_data)
         ) & (pol_calc_data <= 1000)

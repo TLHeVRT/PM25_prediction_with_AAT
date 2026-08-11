@@ -58,11 +58,11 @@ def report_correlations(df, label):
     print(f"\n{label} (N={len(df)})")
     pairs = (
         ("PM25_Mean", "Total_Loss", "Combined loss vs. PM2.5 mean"),
-        ("PM25_Mean", "Base_Loss", "Base loss vs. PM2.5 mean"),
+        ("PM25_Mean", "Base_Loss", "MAE loss vs. PM2.5 mean"),
         ("PM25_Mean", "Norm_Total", "Scaled combined loss vs. PM2.5 mean"),
-        ("PM25_Mean", "Norm_Base", "Scaled base loss vs. PM2.5 mean"),
+        ("PM25_Mean", "Norm_Base", "Scaled MAE loss vs. PM2.5 mean"),
         ("PM25_Std", "Norm_Total", "Scaled combined loss vs. PM2.5 std"),
-        ("PM25_Std", "Norm_Base", "Scaled base loss vs. PM2.5 std"),
+        ("PM25_Std", "Norm_Base", "Scaled MAE loss vs. PM2.5 std"),
     )
 
     for x_col, y_col, description in pairs:
@@ -175,9 +175,9 @@ def main(loss_file):
     plot_norm_loss_vs_mean(
         df,
         "Norm_Base",
-        "Normalized Base Loss",
-        "Normalized Base Loss (Base_Loss / Std)",
-        BASE_DIR / "Normalized_Base_Loss_vs_pm25_mean.png",
+        "Normalized MAE Loss",
+        "Normalized MAE Loss (MAE_Loss / Std)",
+        BASE_DIR / "Normalized_MAE_Loss_vs_pm25_mean.png",
     )
     plot_norm_loss_vs_mean(
         df,

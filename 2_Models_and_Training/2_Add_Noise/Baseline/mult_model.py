@@ -1,24 +1,6 @@
 import numpy as np
 import torch
 import torch.nn as nn
-from pathlib import Path
-
-
-def get_base_skill_site_indices():
-    base_skill = np.loadtxt(
-        Path(__file__).with_name("base_skill.csv"),
-        delimiter=",",
-        skiprows=1,
-        usecols=1,
-    )
-    sorted_indices = np.argsort(base_skill, kind="stable")
-    mid_start = (len(sorted_indices) - 100) // 2
-
-    return {
-        "low": sorted_indices[:100].tolist(),
-        "mid": sorted_indices[mid_start:mid_start + 100].tolist(),
-        "high": sorted_indices[-100:].tolist(),
-    }
 
 
 class PositionalEncoding(nn.Module):
@@ -123,14 +105,7 @@ class DataSet():
         calc_start = 0
         # Fit normalization on the fourth- and third-most-recent years.
         calc_end = 365 * 24 * 2
-        site_groups = get_base_skill_site_indices()
-        held_out_indices = (
-            site_groups["low"] + site_groups["mid"] + site_groups["high"]
-        )
-        fit_site_mask = torch.ones(raw_data.shape[0], dtype=torch.bool)
-        fit_site_mask[held_out_indices] = False
-
-        met_calc_data = met_data_raw[fit_site_mask, calc_start:calc_end, :]
+        met_calc_data = met_data_raw[:, calc_start:calc_end, :]
 
         N, T, C = met_data_raw.shape
         met_mean, met_std = [], []
@@ -159,10 +134,10 @@ class DataSet():
         pol_data_filled = torch.nan_to_num(pol_data_raw, nan=0.0)
 
 
-        pol_calc_raw = pol_data_raw[fit_site_mask, calc_start:calc_end]
-        pol_calc_mask = (pol_mask_matrix[fit_site_mask, calc_start:calc_end].bool() &
+        pol_calc_raw = pol_data_raw[:, calc_start:calc_end]
+        pol_calc_mask = (pol_mask_matrix[:, calc_start:calc_end].bool() &
                          (pol_calc_raw <= 1000))
-        pol_calc_filled = pol_data_filled[fit_site_mask, calc_start:calc_end]
+        pol_calc_filled = pol_data_filled[:, calc_start:calc_end]
         valid_values_calc = pol_calc_filled[pol_calc_mask]
 
         pol_mean = valid_values_calc.mean()

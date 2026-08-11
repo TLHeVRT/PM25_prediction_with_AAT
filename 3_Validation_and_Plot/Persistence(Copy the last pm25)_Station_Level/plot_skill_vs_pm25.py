@@ -13,9 +13,9 @@ DATA_PATH = "data_matrix.npy"
 MODEL_RESULTS_PATH = "station_test_losses.csv"
 PERSISTENCE_RESULTS_PATH = "Persistence_test_losses.csv"
 STATION_FEATURES_PATH = "station_features.csv"
-BASE_FIGURE_PATH = "skill_base_vs_pm25_mean.png"
+BASE_FIGURE_PATH = "skill_MAE_vs_pm25_mean.png"
 COMBINED_FIGURE_PATH = "skill_combined_vs_pm25_mean.png"
-BASE_STD_FIGURE_PATH = "skill_base_vs_pm25_std.png"
+BASE_STD_FIGURE_PATH = "skill_MAE_vs_pm25_std.png"
 COMBINED_STD_FIGURE_PATH = "skill_combined_vs_pm25_std.png"
 BASE_SKILL_TABLE_PATH = "base_skill.csv"
 
@@ -197,8 +197,8 @@ plt.annotate(
     },
 )
 plt.xlabel("Test-year mean PM2.5 concentration (μg/m³)")
-plt.ylabel("Skill (Base Loss)")
-plt.title("Base-loss Skill vs. Mean PM2.5 Concentration")
+plt.ylabel("Skill (MAE Loss)")
+plt.title("MAE-loss Skill vs. Mean PM2.5 Concentration")
 plt.grid(alpha=0.2)
 plt.tight_layout()
 plt.savefig(BASE_FIGURE_PATH, dpi=300)
@@ -293,8 +293,8 @@ plt.annotate(
     },
 )
 plt.xlabel("Test-year PM2.5 standard deviation (μg/m³)")
-plt.ylabel("Skill (Base Loss)")
-plt.title("Base-loss Skill vs. PM2.5 Standard Deviation")
+plt.ylabel("Skill (MAE Loss)")
+plt.title("MAE-loss Skill vs. PM2.5 Standard Deviation")
 plt.grid(alpha=0.2)
 plt.tight_layout()
 plt.savefig(BASE_STD_FIGURE_PATH, dpi=300)
